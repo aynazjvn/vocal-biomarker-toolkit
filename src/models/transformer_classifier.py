@@ -30,7 +30,6 @@ try:
         AutoConfig,
         AutoFeatureExtractor,
         AutoModelForAudioClassification,
-        Wav2Vec2ForSequenceClassification,
     )
     _HF_AVAILABLE = True
 except ImportError:

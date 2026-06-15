@@ -127,7 +127,7 @@ def main(cfg: DictConfig) -> None:
     ]:
         if m:
             print(f"  {label}: {m}")
-    print(f"\nTop-5 features (RF importance):")
+    print("\nTop-5 features (RF importance):")
     for feat, imp in sorted(
         result.feature_importances_rf.items(), key=lambda x: -x[1]
     )[:5]:

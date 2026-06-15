@@ -41,7 +41,7 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
 
 from src.data.respiratory_loader import CoswaraLoader
-from src.evaluation.metrics import evaluate, loocv_evaluate
+from src.evaluation.metrics import loocv_evaluate
 from src.features.audio_features import FeatureExtractor
 
 logging.basicConfig(
@@ -212,7 +212,7 @@ def main() -> None:
 
     print(f"\n  Models saved → {OUT_DIR}/")
     top5 = sorted(importances.items(), key=lambda x: -x[1])[:5]
-    print(f"  Top 5 features:")
+    print("  Top 5 features:")
     for feat, imp in top5:
         print(f"    {feat:<35s}  {imp:.4f}")
 

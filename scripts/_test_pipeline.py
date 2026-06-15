@@ -1,5 +1,7 @@
 """Quick end-to-end pipeline test — run with: python scripts/_test_pipeline.py"""
-import sys, time
+# ruff: noqa: E402
+import sys
+import time
 sys.path.insert(0, ".")
 
 print(">>> Loading dataset...", flush=True)

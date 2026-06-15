@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+# ruff: noqa: E402
 """One-shot setup: extract features (cached), train SVM + RF, save models.
 
 Run once before launching the demo:
@@ -12,7 +13,10 @@ runs skip the 25-minute extraction step.
 """
 
 from __future__ import annotations
-import sys, time, json, pickle
+import sys
+import time
+import json
+import pickle
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
@@ -24,7 +28,7 @@ CORPUS = Path("Italian Parkinson's Voice and speech")
 
 # ── Step 1: load dataset ────────────────────────────────────────────────────
 print("\n[1/4] Loading dataset …")
-from src.data.parkinson_loader import ParkinsonLoader, subject_split
+from src.data.parkinson_loader import ParkinsonLoader
 loader = ParkinsonLoader()
 samples = loader.load_samples(CORPUS)
 pd_n = sum(1 for s in samples if s.label == 1)
@@ -55,7 +59,7 @@ else:
             X_list.append(b.vector)
             y_list.append(s.label)
             subj_list.append(s.subject_id)
-        except Exception as e:
+        except Exception:
             errors += 1
         if (i + 1) % 50 == 0:
             elapsed = time.time() - t0
@@ -90,14 +94,14 @@ print(f"     Done in {time.time()-t0:.1f}s")
 
 # ── Step 4: LOOCV evaluation ─────────────────────────────────────────────────
 print("\n[4/4] Leave-One-Subject-Out evaluation …")
-from src.evaluation.metrics import loocv_evaluate, evaluate
+from src.evaluation.metrics import loocv_evaluate
 
 svm_loocv = build_svm()
 rf_loocv  = build_rf(n_estimators=200)
 m_svm = loocv_evaluate(X, y, subj_ids, svm_loocv)
 m_rf  = loocv_evaluate(X, y, subj_ids, rf_loocv)
 
-print(f"\n  LOOCV results (61-subject leave-one-out):")
+print("\n  LOOCV results (61-subject leave-one-out):")
 print(f"  SVM  {m_svm}")
 print(f"  RF   {m_rf}")
 
@@ -126,7 +130,7 @@ with open(MODEL_DIR / "feature_importances.json", "w") as f:
     json.dump(fi, f, indent=2)
 
 print(f"\n  Models saved → {MODEL_DIR}/")
-print(f"  Top 5 features:")
+print("  Top 5 features:")
 for name, imp in list(fi.items())[:5]:
     print(f"    {name:<40s}  {imp:.4f}")
 

@@ -197,7 +197,7 @@ def main() -> None:
 
     print(f"\n  Models saved → {OUT_DIR}/")
     top5 = sorted(importances.items(), key=lambda x: -x[1])[:5]
-    print(f"  Top 5 features:")
+    print("  Top 5 features:")
     for feat, imp in top5:
         print(f"    {feat:<35s}  {imp:.4f}")
 

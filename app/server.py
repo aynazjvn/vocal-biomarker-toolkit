@@ -22,7 +22,6 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 from fastapi import FastAPI, File, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, JSONResponse
-from fastapi.staticfiles import StaticFiles
 
 from src.inference.pipeline import VocalBiomarkerPipeline
 
@@ -182,6 +181,6 @@ if __name__ == "__main__":
     parser.add_argument("--reload", action="store_true")
     args = parser.parse_args()
 
-    print(f"\n  Vocal Biomarker Screening Toolkit")
+    print("\n  Vocal Biomarker Screening Toolkit")
     print(f"  http://{args.host}:{args.port}\n")
     uvicorn.run("app.server:app", host=args.host, port=args.port, reload=args.reload)

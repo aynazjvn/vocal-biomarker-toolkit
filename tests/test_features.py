@@ -107,7 +107,7 @@ class TestAPIConsistency:
 
         y = _sine_wave()
         wav_path = tmp_path / "test.wav"
-        sf.write(str(wav_path), y, SR)
+        sf.write(str(wav_path), y, SR, subtype="FLOAT")
 
         bundle_file = extractor.from_file(wav_path)
         bundle_wave = extractor.from_waveform(y)
