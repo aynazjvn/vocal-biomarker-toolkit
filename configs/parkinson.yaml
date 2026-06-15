@@ -1,0 +1,46 @@
+# Configuration for the Parkinson's disease screening module.
+# Used by scripts/train_parkinson.py via Hydra / OmegaConf.
+
+condition: parkinson
+
+dataset:
+  root: "Italian Parkinson's Voice and speech"
+  # Task filter: which recording types to include.
+  # Options: B1, B2, VA, VE, VI, VO, VU (vowels), D1 (diadochokinetic), PR (reading), FB (free speech)
+  # null = load all tasks
+  tasks: null
+  include_young_controls: true
+
+features:
+  sample_rate: 16000
+  n_mfcc: 13
+  hop_length: 160    # 10 ms at 16 kHz
+  frame_length: 400  # 25 ms at 16 kHz
+  f0_min: 50.0
+  f0_max: 500.0
+
+training:
+  seed: 42
+  val_ratio: 0.15
+  test_ratio: 0.15
+
+classical:
+  svm_C: 1.0
+  svm_gamma: scale
+  rf_n_estimators: 200
+  rf_max_depth: null   # null = unlimited
+
+transformer:
+  model_name: facebook/wav2vec2-base  # or facebook/hubert-base-ls960
+  num_labels: 2
+  learning_rate: 3.0e-5
+  batch_size: 8
+  num_epochs: 20
+  warmup_steps: 50
+  weight_decay: 0.01
+  fp16: false          # set true if GPU with float16 support
+
+output:
+  dir: results/parkinson
+  save_model: true
+  log_level: INFO

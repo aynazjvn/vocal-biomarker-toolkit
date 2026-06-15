@@ -1,0 +1,42 @@
+# Configuration for the Depression screening module.
+# IMPORTANT: DAIC-WOZ dataset requires approved DUA from USC ICT.
+# See src/data/depression_loader.py for access instructions.
+
+condition: depression
+
+dataset:
+  root: "data/daic_woz"          # update after obtaining dataset access
+  phq8_threshold: 10             # PHQ-8 >= 10 = moderate depression
+
+features:
+  sample_rate: 16000
+  n_mfcc: 13
+  hop_length: 160
+  frame_length: 400
+  f0_min: 50.0
+  f0_max: 400.0                  # lower max for speech (less singing range)
+
+training:
+  seed: 42
+  val_ratio: 0.15
+  test_ratio: 0.15
+
+classical:
+  svm_C: 0.5
+  svm_gamma: scale
+  rf_n_estimators: 200
+
+transformer:
+  model_name: facebook/wav2vec2-large-robust   # robust to naturalistic speech
+  num_labels: 2
+  learning_rate: 2.0e-5
+  batch_size: 4
+  num_epochs: 15
+  warmup_steps: 100
+  weight_decay: 0.01
+  fp16: false
+
+output:
+  dir: results/depression
+  save_model: true
+  log_level: INFO

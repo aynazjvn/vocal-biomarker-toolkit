@@ -1,0 +1,33 @@
+{
+  "loocv_svm": {
+    "auroc": 0.6825086805555557,
+    "sensitivity": 0.6302083333316922,
+    "specificity": 0.6687499999986067,
+    "f1": 0.6165605095541401,
+    "precision": 0.6034912718204489,
+    "accuracy": 0.6516203703703703,
+    "ece": 0.1306409247309565,
+    "threshold": 0.5,
+    "n_positive": 384,
+    "n_negative": 480
+  },
+  "loocv_rf": {
+    "auroc": 0.7372097439236112,
+    "sensitivity": 0.5364583333319364,
+    "specificity": 0.7895833333316884,
+    "f1": 0.5962373371924746,
+    "precision": 0.6710097719869706,
+    "accuracy": 0.6770833333333334,
+    "ece": 0.08214891975308641,
+    "threshold": 0.5,
+    "n_positive": 384,
+    "n_negative": 480
+  },
+  "n_samples": 864,
+  "n_features": 63,
+  "n_subjects": 24,
+  "n_positive": 384,
+  "n_negative": 480,
+  "dataset": "RAVDESS",
+  "note": "Research proxy: sad+fearful=1, neutral+calm+happy=0. Not clinical depression."
+}
