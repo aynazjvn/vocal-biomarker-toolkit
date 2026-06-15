@@ -628,7 +628,7 @@ footer {
     </div>
 
     <h1>Analyse vocal biomarkers<br/>with <span>machine learning.</span></h1>
-    <p class="hero-sub">Record a short voice sample and get an instant acoustic analysis — 63 features extracted, Parkinson's vocal pattern similarity scored, key contributors identified.</p>
+    <p class="hero-sub">Record a short voice sample and get an instant acoustic analysis across three conditions — Parkinson's, Respiratory, and Depression affect — 63 acoustic features extracted, scored, and explained.</p>
 
     <!-- Demo card ─────────────────────────────────────────────────────── -->
     <div class="demo-card">
@@ -674,7 +674,7 @@ footer {
         <div class="demo-actions">
           <div class="record-wrap" id="record-wrap">
             <div class="record-pulse"></div>
-            <div class="record-pulse" style="animation-delay:.42s"></div>
+            <div class="record-pulse record-pulse2"></div>
             <button class="record-btn" id="record-btn" onclick="toggleRecord()">
               <svg width="26" height="26" viewBox="0 0 22 22" fill="none">
                 <path d="M11 3a4 4 0 014 4v4a4 4 0 01-8 0V7a4 4 0 014-4z" fill="#ef4444" fill-opacity=".85"/>
@@ -703,7 +703,7 @@ footer {
     <div class="hero-stats">
       <div class="hero-stat"><strong>831</strong><span class="hero-stat-sep">·</span>voice recordings</div>
       <div class="hero-stat"><strong>63</strong><span class="hero-stat-sep">·</span>acoustic features</div>
-      <div class="hero-stat"><strong>AUROC 0.992</strong><span class="hero-stat-sep">·</span>SVM LOOCV</div>
+      <div class="hero-stat"><strong>AUROC 0.989</strong><span class="hero-stat-sep">·</span>RF LOOCV</div>
       <div class="hero-stat"><strong>61</strong><span class="hero-stat-sep">·</span>subjects</div>
     </div>
 
@@ -908,7 +908,7 @@ footer {
       <div class="step">
         <div class="step-num">3</div>
         <h3>ML Inference</h3>
-        <p>Two calibrated Random Forest models score the sample in parallel: Parkinson's (LOOCV AUROC 0.989, Italian corpus) and Respiratory / COVID-19 pattern (Coswara dataset). Feature importances reveal which biomarkers drove each prediction.</p>
+        <p>Three calibrated Random Forest models score the sample in parallel: Parkinson's (LOOCV AUROC 0.989, Italian corpus), Respiratory / COVID-19 pattern (Coswara, AUROC 0.817), and Depression affect (RAVDESS proxy, AUROC 0.737). Feature importances reveal which biomarkers drove each prediction.</p>
       </div>
     </div>
   </div>
