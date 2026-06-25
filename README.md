@@ -1,6 +1,6 @@
 # Vocal Biomarker Screening Toolkit
 
-A research web application that screens for three neurological and respiratory conditions from a short voice recording. Built as a portfolio project demonstrating end-to-end clinical speech ML — from data loading and subject-aware cross-validation to fine-tuned transformer inference with gradient-based explainability.
+A research web application that screens for three neurological and respiratory conditions from a short voice recording. Built as a portfolio project demonstrating end-to-end clinical speech ML from data loading and subject-aware cross-validation to fine-tuned transformer inference with gradient-based explainability.
 
 > **Research / Educational Tool Only.** Not validated for clinical use. Do not use for diagnosis, treatment, or patient screening.
 
