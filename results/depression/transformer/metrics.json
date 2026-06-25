@@ -1,0 +1,13 @@
+{
+  "loocv_transformer": {
+    "auroc": 0.8489,
+    "cv_type": "loocv"
+  },
+  "n_samples": 864,
+  "n_positive": 384,
+  "n_negative": 480,
+  "n_subjects": 24,
+  "model_name": "superb/wav2vec2-base-superb-er",
+  "freeze_encoder_layers": 8,
+  "elapsed_s": 2063.3
+}

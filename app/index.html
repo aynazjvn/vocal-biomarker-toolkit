@@ -612,7 +612,6 @@ footer {
     <a href="#tech">Methods</a>
   </div>
   <div class="nav-right">
-    <button class="btn-nav-ghost" onclick="document.getElementById('about').scrollIntoView({behavior:'smooth'})">About</button>
     <button class="btn-nav-primary" onclick="document.getElementById('hero').scrollIntoView({behavior:'smooth'})">Try Demo</button>
   </div>
 </nav>
@@ -624,16 +623,16 @@ footer {
 
     <div class="hero-eyebrow">
       <span class="hero-eyebrow-dot"></span>
-      AI Voice Analysis &nbsp;·&nbsp; Research Portfolio
+      Clinical Speech ML
     </div>
 
     <h1>Analyse vocal biomarkers<br/>with <span>machine learning.</span></h1>
-    <p class="hero-sub">Record a short voice sample and get an instant acoustic analysis across three conditions — Parkinson's, Respiratory, and Depression affect — 63 acoustic features extracted, scored, and explained.</p>
+    <p class="hero-sub">Record a short voice sample and receive a real-time screening report across three conditions: Parkinson's, Respiratory, and Depression affect, powered by fine-tuned transformer models evaluated with clinical-grade cross-validation.</p>
 
     <!-- Demo card ─────────────────────────────────────────────────────── -->
     <div class="demo-card">
       <div class="demo-card-header">
-        <span class="demo-card-title">Voice Analyser</span>
+        <span class="demo-card-title">Voice Screening</span>
         <div class="demo-status">
           <span class="demo-status-dot no-mdl" id="status-dot"></span>
           <span id="status-text">Checking…</span>
@@ -641,8 +640,8 @@ footer {
       </div>
 
       <div class="no-model-bar" id="no-model-bar">
-        <strong>⚠ Model not trained yet.</strong>
-        Run <code>python scripts/setup_and_train.py</code> first, then refresh. Recording still works.
+        <strong>⚠ Models not loaded.</strong>
+        Run <code>python scripts/train_parkinson_transformer.py</code> (and the other two) first, then restart the server.
       </div>
 
       <div class="demo-instruction" id="instr-record">
@@ -701,10 +700,10 @@ footer {
 
     <!-- Stat pills -->
     <div class="hero-stats">
-      <div class="hero-stat"><strong>831</strong><span class="hero-stat-sep">·</span>voice recordings</div>
-      <div class="hero-stat"><strong>63</strong><span class="hero-stat-sep">·</span>acoustic features</div>
-      <div class="hero-stat"><strong>AUROC 0.989</strong><span class="hero-stat-sep">·</span>RF LOOCV</div>
-      <div class="hero-stat"><strong>61</strong><span class="hero-stat-sep">·</span>subjects</div>
+      <div class="hero-stat"><strong>3</strong><span class="hero-stat-sep">·</span>conditions screened</div>
+      <div class="hero-stat"><strong>3</strong><span class="hero-stat-sep">·</span>fine-tuned transformers</div>
+      <div class="hero-stat"><strong>AUROC 0.963</strong><span class="hero-stat-sep">·</span>Parkinson's LOOCV</div>
+      <div class="hero-stat"><strong>4,294</strong><span class="hero-stat-sep">·</span>training recordings</div>
     </div>
 
   </div>
@@ -970,60 +969,16 @@ footer {
   </div>
 </section>
 
-<!-- ─── About ──────────────────────────────────────────────────────────────── -->
-<section id="about">
-  <div class="container">
-    <div class="about-simple">
-      <div class="avatar">AJ</div>
-      <div class="about-simple-body">
-        <div class="about-simple-name">Aynaz Javanivayeghan</div>
-        <div class="about-simple-role">AI / ML Engineer &nbsp;·&nbsp; MSc Computer Science, Concordia University</div>
-        <p class="about-simple-bio">
-          I'm an MSc Computer Science candidate at Concordia University, where my research focuses on deep learning
-          for large-scale time-series data, specifically power-grid outage prediction using climate and infrastructure
-          signals. I also work as a Graduate Research Assistant and Teaching Assistant across courses including
-          Deep Learning, Intelligent Systems, Databases, and Web Programming.
-          <br/><br/>
-          Outside academia, I co-founded 41prompts.ai, a browser-based platform for real-time LLM prompt
-          optimization, evaluation, and chaining across multiple LLM providers.
-          <br/><br/>
-          This app is a portfolio research project exploring whether vocal biomarkers can reliably screen for
-          Parkinson's Disease using classical signal processing. It extends earlier work fine-tuning X-vector,
-          ECAPA-TDNN, and Whisper models for PD classification, now adding a fully interpretable 63-feature
-          pipeline with leave-one-subject-out cross-validation across 61 subjects.
-        </p>
-        <div class="about-links">
-          <a class="about-link" href="https://aynazjvn.github.io" target="_blank">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><circle cx="7" cy="7" r="5.5"/><path d="M7 1.5C5.5 3 4.5 5 4.5 7s1 4 2.5 5.5M7 1.5C8.5 3 9.5 5 9.5 7S8.5 11 7 12.5M1.5 7h11"/></svg>
-            Portfolio
-          </a>
-          <a class="about-link" href="https://www.linkedin.com/in/aynaz-javani" target="_blank">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><rect x="1" y="1" width="12" height="12" rx="2.5"/><path d="M3.5 5.5h1.2v4.5H3.5zm.6-1.8a.7.7 0 110 1.4.7.7 0 010-1.4zM6.2 5.5h1.15v.62h.02c.16-.3.55-.62 1.13-.62.12 0 2.3.08 2.3 2.19 0 0 0 2.31-.01 2.31H9.63V8.1c0-.55-.01-1.26-.77-1.26s-.89.6-.89 1.22v1.94H6.8V5.5z" fill="white"/></svg>
-            LinkedIn
-          </a>
-          <a class="about-link" href="https://github.com/aynazjvn" target="_blank">
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor"><path d="M7 .5A6.5 6.5 0 00.5 7c0 2.87 1.86 5.3 4.44 6.16.32.06.44-.14.44-.3v-1.05c-1.8.39-2.18-.87-2.18-.87-.3-.75-.72-.95-.72-.95-.59-.4.04-.4.04-.4.65.05 1 .67 1 .67.58 1 1.52.71 1.9.54.06-.42.23-.71.42-.87-1.44-.16-2.95-.72-2.95-3.2 0-.71.25-1.28.67-1.74-.07-.16-.29-.82.06-1.7 0 0 .55-.18 1.8.67A6.25 6.25 0 017 3.9c.56 0 1.12.07 1.64.22 1.25-.85 1.8-.67 1.8-.67.35.88.13 1.54.06 1.7.42.46.67 1.03.67 1.73 0 2.49-1.52 3.04-2.96 3.2.23.2.44.6.44 1.2v1.78c0 .17.11.37.44.3A6.5 6.5 0 0013.5 7 6.5 6.5 0 007 .5z"/></svg>
-            GitHub
-          </a>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
 
 <!-- ─── Footer ─────────────────────────────────────────────────────────────── -->
 <footer>
   <div class="footer-name">Vocal Biomarker Screening Toolkit</div>
-  <div class="footer-links">
-    <a href="https://aynazjvn.github.io" target="_blank">Portfolio</a>
-    <a href="https://www.linkedin.com/in/aynaz-javani" target="_blank">LinkedIn</a>
-    <a href="#how-it-works">Methodology</a>
-    <a href="#about">About</a>
-  </div>
   <div class="footer-copy">
     Built by <strong style="color:var(--text-2)">Aynaz Javanivayeghan</strong> &nbsp;·&nbsp;
-    Italian Parkinson's Voice and Speech Corpus &nbsp;·&nbsp;
-    <span class="warn">Research only — not a diagnostic device</span>
+    <a href="https://aynazjvn.github.io" target="_blank" style="color:var(--text-3)">Portfolio</a> &nbsp;·&nbsp;
+    <a href="https://www.linkedin.com/in/aynaz-javani" target="_blank" style="color:var(--text-3)">LinkedIn</a> &nbsp;·&nbsp;
+    <a href="https://github.com/aynazjvn" target="_blank" style="color:var(--text-3)">GitHub</a> &nbsp;·&nbsp;
+    <span class="warn">Research only, not a diagnostic device</span>
   </div>
 </footer>
 

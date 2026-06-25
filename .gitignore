@@ -40,5 +40,9 @@ results/parkinson/features.npz
 results/respiratory/features.npz
 results/depression/features.npz
 
-# ── Keep model checkpoints (small, enable demo without retraining) ─────────────
-# results/*/classical/*.pkl  ← intentionally NOT ignored
+# ── Model checkpoints (too large for GitHub without git-lfs) ─────────────────
+# Transformer model weights (~360 MB each) — retrain with scripts/train_*_transformer.py
+results/*/transformer/model.pt
+
+# Training logs
+logs/

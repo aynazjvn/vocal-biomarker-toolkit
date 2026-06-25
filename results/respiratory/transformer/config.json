@@ -1,0 +1,5 @@
+{
+  "model_name": "microsoft/wavlm-base",
+  "freeze_feature_extractor": true,
+  "freeze_encoder_layers": 8
+}

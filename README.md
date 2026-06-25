@@ -1,168 +1,218 @@
 # Vocal Biomarker Screening Toolkit
 
-A research web application that screens for three neurological and respiratory conditions from a short voice recording. Built as a portfolio project by [Aynaz Javanivayeghan](https://aynazjvn.github.io).
+A research web application that screens for three neurological and respiratory conditions from a short voice recording. Built as a portfolio project demonstrating end-to-end clinical speech ML — from data loading and subject-aware cross-validation to fine-tuned transformer inference with gradient-based explainability.
 
 > **Research / Educational Tool Only.** Not validated for clinical use. Do not use for diagnosis, treatment, or patient screening.
 
 ---
 
-## Overview
+## Results
 
-This project extracts 63 acoustic biomarkers from a voice recording and runs them through three independent Random Forest classifiers — one per condition. The entire pipeline runs in real time in the browser: record, upload, get results with feature attribution.
+| Condition | Backbone | Evaluation Protocol | AUROC | Dataset |
+|---|---|---|---|---|
+| Parkinson's Disease | Wav2Vec2-base fine-tuned | LOOCV — 61 subjects | **0.963** | Italian Parkinson's Voice and Speech Corpus (831 recordings) |
+| Depression Affect | Wav2Vec2-base-SUPERB-ER fine-tuned | Leave-Actor-Out — 24 actors | **0.849** | RAVDESS (864 speech clips) |
+| Respiratory / COVID-19 | WavLM-base fine-tuned | 10-fold subject-grouped CV | **0.733** | Coswara IISc (2,599 cough recordings) |
 
-| Condition | Dataset | LOOCV AUROC | Training samples |
-|---|---|---|---|
-| Parkinson's Disease | Italian Parkinson's Voice and Speech Corpus | **0.989** | 831 recordings, 61 subjects |
-| Respiratory / COVID-19 | Coswara (IISc Bangalore) | **0.817** | 498 cough recordings, 498 subjects |
-| Depression Affect | RAVDESS (affect proxy) | **0.737** | 864 speech clips, 24 actors |
+LOOCV (Leave-One-Subject-Out Cross-Validation) is the standard evaluation protocol for small medical audio datasets. It ensures no recording from a held-out subject ever appears in training, preventing the optimistic bias that arises from within-subject acoustic correlations.
 
 ---
 
 ## Architecture
 
+Each condition uses an independently fine-tuned transformer encoder with a binary classification head:
+
 ```
-Browser (MediaRecorder API)
-    │
-    ▼
-FastAPI server  (app/server.py)
-    │
-    ▼
-Feature Extractor  (src/features/audio_features.py)
-    63 features: MFCCs (13×3 stats) · F0/YIN · Jitter · Shimmer · HNR
-                 Spectral centroid · Rolloff · Flatness · ZCR · Chroma (12)
-    │
-    ├── Random Forest → Parkinson's score   (Italian corpus, LOOCV AUROC 0.989)
-    ├── Random Forest → Respiratory score   (Coswara cough,  LOOCV AUROC 0.817)
-    └── Random Forest → Depression score    (RAVDESS affect, LOOCV AUROC 0.737)
-    │
-    ▼
-JSON report → rendered in browser with gauges + feature importance bars
+Raw audio (16 kHz mono)
+    |
+    v
+Specialist pretrained encoder (per condition)
+    Parkinson's : facebook/wav2vec2-base              general speech
+    Depression  : superb/wav2vec2-base-superb-er      emotion recognition pretrained
+    Respiratory : microsoft/wavlm-base                masked denoising pretrained
+    |
+    v
+CNN feature extractor  [frozen]
+    |
+    v
+Transformer encoder  [bottom 8 of 12 layers frozen, top 4 fine-tuned]
+    |
+    v
+Mean pooling over time frames
+    |
+    v
+Dropout(0.1) -- Linear(768, 1) -- sigmoid -- P(condition)
 ```
+
+**Backbone selection rationale:**
+- `wav2vec2-base` was pretrained for automatic speech recognition. It provides a strong baseline for pathological speech (Parkinson's).
+- `wav2vec2-base-superb-er` was further fine-tuned on the SUPERB emotion recognition benchmark. Its encoder already encodes affect-relevant representations, giving a better initialization for depression affect detection.
+- `wavlm-base` uses a masked denoising pre-training objective that captures richer spectrotemporal features beyond speech content — better suited for cough audio where the signal is non-linguistic.
+
+**Explainability:**
+For transformer models, the server computes input-gradient saliency — d(sigmoid output) / d(input waveform) — and aggregates absolute gradient magnitudes into 0.5-second time blocks. The five most influential regions are returned per prediction alongside the probability score.
+
+**Training details:**
+- Optimizer: AdamW with weight decay 1e-2
+- Scheduler: OneCycleLR with 10% linear warm-up
+- Loss: BCEWithLogitsLoss with class-frequency pos_weight for imbalanced conditions
+- All waveforms pre-loaded to RAM before LOOCV to eliminate per-fold disk I/O overhead
+- Model weights cached after fold 1; subsequent folds rebuild the architecture from config without re-downloading
 
 ---
 
 ## Project Structure
 
 ```
+vocal-biomarker-toolkit/
+|
 ├── app/
-│   ├── server.py              FastAPI backend — serves UI + /api/predict
-│   └── index.html             Single-page frontend (recording, results, about)
+│   ├── server.py                    FastAPI backend — /api/predict, /api/health
+│   └── index.html                   Single-page frontend (recording, results, about)
+|
 ├── src/
 │   ├── data/
-│   │   ├── parkinson_loader.py    Italian corpus loader
-│   │   ├── respiratory_loader.py  Coswara loader (covid_status labels)
-│   │   └── depression_loader.py   RAVDESS loader (affect proxy labels)
+│   │   ├── base_loader.py           AudioSample dataclass and BaseLoader ABC
+│   │   ├── parkinson_loader.py      Italian corpus loader
+│   │   ├── respiratory_loader.py    Coswara loader (covid_status labels)
+│   │   └── depression_loader.py     RAVDESS loader (affect proxy labels)
 │   ├── features/
-│   │   └── audio_features.py      63-feature extractor (librosa)
+│   │   └── audio_features.py        63-feature extractor (MFCCs, jitter, shimmer, HNR, spectral)
 │   ├── inference/
-│   │   └── pipeline.py            Multi-condition inference pipeline
+│   │   └── pipeline.py              Multi-condition pipeline with gradient saliency
 │   ├── models/
-│   │   ├── classical.py           RF + SVM builders
-│   │   └── transformer_classifier.py
+│   │   ├── classical.py             RF and SVM builders (classical baseline)
+│   │   └── wav2vec2_classifier.py   AutoModel-based binary classifier (transformer conditions)
 │   ├── training/
-│   │   └── trainer.py             LOOCV training loop
+│   │   ├── trainer.py               Classical LOOCV training loop
+│   │   └── transformer_trainer.py   Transformer training — LOOCV, k-fold, RAM caching
 │   └── evaluation/
-│       └── metrics.py             AUROC, sensitivity, specificity, ECE
+│       └── metrics.py               AUROC, sensitivity, specificity, ECE
+|
 ├── scripts/
-│   ├── setup_and_train.py         One-shot setup for Parkinson's model
-│   ├── train_parkinson.py
-│   ├── train_respiratory.py
-│   └── train_depression.py
+│   ├── train_parkinson_transformer.py
+│   ├── train_respiratory_transformer.py
+│   └── train_depression_transformer.py
+|
 ├── results/
-│   ├── parkinson/classical/       rf.pkl · svm.pkl · metrics.json
-│   ├── respiratory/classical/     rf.pkl · svm.pkl · metrics.json
-│   └── depression/classical/      rf.pkl · svm.pkl · metrics.json
+│   ├── parkinson/transformer/       model.pt · config.json · metrics.json
+│   ├── respiratory/transformer/     model.pt · config.json · metrics.json
+│   └── depression/transformer/      model.pt · config.json · metrics.json
+|
 ├── data/
-│   ├── coswara/                   Coswara-Data sparse clone + extracted audio
-│   └── ravdess/                   RAVDESS Audio_Speech_Actors_01-24
+│   ├── coswara/                     Coswara-Data git clone + Extracted_data/
+│   └── ravdess/                     Audio_Speech_Actors_01-24/
+|
 ├── notebooks/
-│   └── Parkinson.ipynb            EDA and deep learning experiments
-├── configs/                       Hydra configs for each condition
-└── tests/                         Unit tests for features and pipeline
+│   └── Parkinson.ipynb              EDA and earlier deep learning experiments
+|
+└── tests/                           Unit tests for features and pipeline
 ```
 
 ---
 
-## Quick Start
+## Setup and Training
 
-**Prerequisites:** Python 3.12 (Anaconda recommended), `pip install -r requirements.txt`
-
-### 1. Parkinson's model (already trained if you have the dataset)
+**Prerequisites:** Python 3.10+, CUDA GPU strongly recommended.
 
 ```bash
-python scripts/setup_and_train.py
+git clone <repo-url>
+cd vocal-biomarker-toolkit
+python -m venv venv && source venv/bin/activate
+pip install -r requirements.txt
 ```
 
-Dataset: Italian Parkinson's Voice and Speech Corpus — place recordings in `Italian Parkinson's Voice and speech/`.
+Model checkpoints are not committed (each `model.pt` is ~360 MB). Train each condition from scratch:
 
-### 2. Respiratory model
+### Parkinson's
+
+Requires the Italian Parkinson's Voice and Speech Corpus — place recordings under `Italian Parkinson's Voice and speech/`.
 
 ```bash
-# Data is already cloned and extracted in data/coswara/Extracted_data/
-python scripts/train_respiratory.py --data data/coswara/Extracted_data
+python scripts/train_parkinson_transformer.py
 ```
 
-### 3. Depression model
+### Depression
+
+Download RAVDESS from [Zenodo record 1188976](https://zenodo.org/record/1188976) (`Audio_Speech_Actors_01-24.zip`, 198 MB) and unzip to `data/ravdess/`.
 
 ```bash
-# Data is already extracted in data/ravdess/
-python scripts/train_depression.py --data data/ravdess
+python scripts/train_depression_transformer.py --data data/ravdess
 ```
 
-### 4. Launch the web app
+### Respiratory
+
+```bash
+git clone https://github.com/iiscleap/Coswara-Data.git data/coswara
+cd data/coswara && python extract_data.py && cd ../..
+python scripts/train_respiratory_transformer.py --data data/coswara/Extracted_data
+```
+
+Each script runs cross-validation, trains a final model on all data, and saves the checkpoint to `results/{condition}/transformer/`.
+
+---
+
+## Running the Server
 
 ```bash
 python app/server.py
 # Open http://127.0.0.1:8000
 ```
 
+On startup the server calls `VocalBiomarkerPipeline.from_auto()`, which checks for a transformer checkpoint first (`results/{condition}/transformer/model.pt`) and falls back to a classical RF model if one is absent. The `/api/health` endpoint reports which model type is loaded per condition along with its CV metrics.
+
 ---
 
-## API
+## API Reference
 
 | Endpoint | Method | Description |
 |---|---|---|
-| `/` | GET | Serves the frontend |
-| `/api/health` | GET | Model status + LOOCV metrics for all 3 conditions |
-| `/api/predict` | POST | Upload audio file → JSON report with scores + top features |
+| `/` | GET | Frontend |
+| `/api/health` | GET | Loaded model type and AUROC per condition |
+| `/api/predict` | POST (multipart) | Upload audio file, receive prediction report |
 
-### Example predict response
+**Predict response:**
 
 ```json
 {
+  "audio_path": "...",
   "duration_s": 7.2,
   "sample_rate": 16000,
   "conditions": {
-    "parkinson":   { "score": 0.04, "label": "negative", "top_features": [...] },
-    "respiratory": { "score": 0.31, "label": "negative", "top_features": [...] },
-    "depression":  { "score": 0.42, "label": "negative", "top_features": [...] }
-  }
+    "parkinson": {
+      "score": 0.12,
+      "label": "negative",
+      "threshold": 0.5,
+      "model_type": "transformer",
+      "top_features": [
+        { "feature": "2.0-2.5s", "importance": 0.18 },
+        { "feature": "4.5-5.0s", "importance": 0.15 }
+      ]
+    },
+    "respiratory": { "...": "..." },
+    "depression":  { "...": "..." }
+  },
+  "disclaimer": "RESEARCH / EDUCATIONAL TOOL ONLY. ..."
 }
 ```
+
+For transformer models, `top_features` lists the five most salient 0.5-second time windows by gradient magnitude. For classical models they are the top-10 Random Forest feature importances by name.
 
 ---
 
 ## Datasets
 
-| Dataset | License | Access |
+| Dataset | License | Source |
 |---|---|---|
-| Italian Parkinson's Voice and Speech Corpus | Academic | [IEEE DataPort](https://ieee-dataport.org/open-access/italian-parkinsons-voice-and-speech) |
-| Coswara | CC BY 4.0 | [GitHub](https://github.com/iiscleap/Coswara-Data) |
-| RAVDESS | CC BY-NC-SA 4.0 | [Zenodo](https://zenodo.org/record/1188976) |
+| Italian Parkinson's Voice and Speech Corpus | Academic use | [IEEE DataPort](https://ieee-dataport.org/open-access/italian-parkinsons-voice-and-speech) |
+| Coswara | CC BY 4.0 | [GitHub — iiscleap/Coswara-Data](https://github.com/iiscleap/Coswara-Data) |
+| RAVDESS | CC BY-NC-SA 4.0 | [Zenodo 1188976](https://zenodo.org/record/1188976) |
 
 ---
 
-## Earlier Deep Learning Experiments
+## Notebooks
 
-The `notebooks/Parkinson.ipynb` contains experiments fine-tuning speaker embedding models on the Italian corpus:
-
-| Model | Test Accuracy | Notes |
-|---|---|---|
-| X-vector (MFCC) | 100% (original) / 90.6% (augmented) | Lightweight |
-| ECAPA-TDNN (Fbank) | 100% (original) / 85.9% (augmented) | State-of-the-art speaker embedding |
-| Whisper | 95.3% (original) / 70.6% (augmented) | ASR adapted for classification |
-
-The classical ML pipeline (this repo's main contribution) achieves LOOCV AUROC 0.989, which is more reliable than held-out accuracy because it prevents same-subject data leakage across train/test.
+`notebooks/Parkinson.ipynb` documents earlier experiments fine-tuning speaker embedding models (X-Vector, ECAPA-TDNN, Whisper) on the Italian corpus. These are exploratory; the production pipeline uses the transformer training scripts described above.
 
 ---
 

@@ -1,0 +1,28 @@
+{
+  "loocv_transformer": {
+    "auroc": 0.7329,
+    "cv_type": "10-fold",
+    "fold_aurocs": [
+      0.7388,
+      0.7098,
+      0.7254,
+      0.7266,
+      0.7627,
+      0.6789,
+      0.8071,
+      0.7463,
+      0.666,
+      0.7734
+    ]
+  },
+  "n_samples": 2599,
+  "n_positive": 840,
+  "n_negative": 1759,
+  "n_subjects": 2599,
+  "tasks": [
+    "cough-shallow"
+  ],
+  "model_name": "microsoft/wavlm-base",
+  "freeze_encoder_layers": 8,
+  "elapsed_s": 4982.9
+}

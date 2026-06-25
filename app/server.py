@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import json
 import os
-import pickle
 import sys
 import tempfile
 from pathlib import Path
@@ -27,10 +26,11 @@ from src.inference.pipeline import VocalBiomarkerPipeline
 
 # ---------------------------------------------------------------------------
 
-PK_MODEL_DIR   = Path("results/parkinson/classical")
-RESP_MODEL_DIR = Path("results/respiratory/classical")
-DEPR_MODEL_DIR = Path("results/depression/classical")
-APP_DIR        = Path(__file__).parent
+_ROOT    = Path(__file__).parent.parent
+PK_DIR   = _ROOT / "results" / "parkinson"
+RESP_DIR = _ROOT / "results" / "respiratory"
+DEPR_DIR = _ROOT / "results" / "depression"
+APP_DIR  = Path(__file__).parent
 
 app = FastAPI(title="Vocal Biomarker Screening Toolkit", version="1.0.0")
 app.add_middleware(CORSMiddleware, allow_origins=["*"],
@@ -41,68 +41,35 @@ model_meta: dict = {}
 
 # ---------------------------------------------------------------------------
 
-def _load_model(model_dir: Path) -> tuple:
-    """Load rf.pkl, feature_names.json, metrics.json from a model directory.
-
-    Returns (model, feature_names, metrics) — all None/empty on failure.
-    """
-    rf_path   = model_dir / "rf.pkl"
-    feat_path = model_dir / "feature_names.json"
-    meta_path = model_dir / "metrics.json"
-
-    if not rf_path.exists():
-        return None, [], {}
-
-    with open(rf_path, "rb") as f:
-        rf = pickle.load(f)
-
-    feature_names: list[str] = []
-    if feat_path.exists():
-        with open(feat_path) as f:
-            feature_names = json.load(f)
-
-    metrics: dict = {}
-    if meta_path.exists():
-        with open(meta_path) as f:
-            metrics = json.load(f)
-
-    return rf, feature_names, metrics
-
 
 @app.on_event("startup")
 def load_models() -> None:
     global pipeline, model_meta
 
-    pk_rf, pk_features, pk_meta = _load_model(PK_MODEL_DIR)
-    if pk_rf is None:
-        print(f"[WARN] No Parkinson model at {PK_MODEL_DIR}. Run: python scripts/setup_and_train.py")
-    else:
-        loocv = pk_meta.get("loocv_rf", {})
-        print(f"[INFO] Parkinson model loaded — LOOCV AUROC={loocv.get('auroc','?'):.3f}")
-
-    resp_rf, resp_features, resp_meta = _load_model(RESP_MODEL_DIR)
-    if resp_rf is None:
-        print(f"[INFO] No respiratory model at {RESP_MODEL_DIR} (run scripts/train_respiratory.py)")
-    else:
-        loocv = resp_meta.get("loocv_rf", {})
-        print(f"[INFO] Respiratory model loaded — LOOCV AUROC={loocv.get('auroc','?'):.3f}")
-
-    depr_rf, depr_features, depr_meta = _load_model(DEPR_MODEL_DIR)
-    if depr_rf is None:
-        print(f"[INFO] No depression model at {DEPR_MODEL_DIR} (run scripts/train_depression.py)")
-    else:
-        loocv = depr_meta.get("loocv_rf", {})
-        print(f"[INFO] Depression model loaded — LOOCV AUROC={loocv.get('auroc','?'):.3f}")
-
-    model_meta = {"parkinson": pk_meta, "respiratory": resp_meta, "depression": depr_meta}
-    pipeline = VocalBiomarkerPipeline(
-        parkinson_model=pk_rf,
-        respiratory_model=resp_rf,
-        depression_model=depr_rf,
-        feature_names=pk_features,
-        respiratory_feature_names=resp_features,
-        depression_feature_names=depr_features,
+    pipeline = VocalBiomarkerPipeline.from_auto(
+        parkinson_dir=PK_DIR,
+        respiratory_dir=RESP_DIR,
+        depression_dir=DEPR_DIR,
     )
+
+    # Collect metadata for the /api/health endpoint
+    model_meta = {}
+    for condition, cond_dir in [
+        ("parkinson",   PK_DIR),
+        ("respiratory", RESP_DIR),
+        ("depression",  DEPR_DIR),
+    ]:
+        mtype = pipeline.model_types.get(condition, "none")
+        subdir = "transformer" if mtype == "transformer" else "classical"
+        meta_path = cond_dir / subdir / "metrics.json"
+        meta: dict = {}
+        if meta_path.exists():
+            try:
+                with open(meta_path) as f:
+                    meta = json.load(f)
+            except Exception:
+                pass
+        model_meta[condition] = {**meta, "model_type": mtype}
 
 
 # ---------------------------------------------------------------------------
@@ -116,33 +83,35 @@ def index() -> FileResponse:
 
 @app.get("/api/health")
 def health() -> dict:
-    pk_model   = pipeline.models.get("parkinson")   if pipeline else None
-    resp_model = pipeline.models.get("respiratory") if pipeline else None
-    depr_model = pipeline.models.get("depression")  if pipeline else None
-    pk_meta    = model_meta.get("parkinson", {})
-    resp_meta  = model_meta.get("respiratory", {})
-    depr_meta  = model_meta.get("depression", {})
+    def _condition_info(condition: str) -> dict:
+        model = pipeline.models.get(condition) if pipeline else None
+        meta  = model_meta.get(condition, {})
+        mtype = meta.get("model_type", "none")
+
+        # AUROC lives under "loocv_transformer" for transformer models,
+        # under "loocv_rf" for classical — support both shapes.
+        cv_block = meta.get("loocv_transformer") or meta.get("loocv_rf") or {}
+        return {
+            "loaded":      model is not None,
+            "model_type":  mtype,
+            "metrics":     cv_block,
+            "n_samples":   meta.get("n_samples"),
+            "n_features":  meta.get("n_features"),
+        }
+
+    pk_info = _condition_info("parkinson")
     return {
         "status": "ok",
         "models": {
-            "parkinson":   {"loaded": pk_model is not None,
-                            "metrics": pk_meta.get("loocv_rf", {}),
-                            "n_samples": pk_meta.get("n_samples"),
-                            "n_features": pk_meta.get("n_features")},
-            "respiratory": {"loaded": resp_model is not None,
-                            "metrics": resp_meta.get("loocv_rf", {}),
-                            "n_samples": resp_meta.get("n_samples"),
-                            "n_features": resp_meta.get("n_features")},
-            "depression":  {"loaded": depr_model is not None,
-                            "metrics": depr_meta.get("loocv_rf", {}),
-                            "n_samples": depr_meta.get("n_samples"),
-                            "n_features": depr_meta.get("n_features")},
+            "parkinson":   pk_info,
+            "respiratory": _condition_info("respiratory"),
+            "depression":  _condition_info("depression"),
         },
         # legacy fields — kept so the old frontend checkHealth still works
-        "model_loaded": pk_model is not None,
-        "metrics": pk_meta.get("loocv_rf", {}),
-        "n_samples": pk_meta.get("n_samples"),
-        "n_features": pk_meta.get("n_features"),
+        "model_loaded": pk_info["loaded"],
+        "metrics":      pk_info["metrics"],
+        "n_samples":    pk_info["n_samples"],
+        "n_features":   pk_info["n_features"],
     }
 
 

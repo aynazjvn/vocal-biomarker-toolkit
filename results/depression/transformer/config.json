@@ -1,0 +1,5 @@
+{
+  "model_name": "superb/wav2vec2-base-superb-er",
+  "freeze_feature_extractor": true,
+  "freeze_encoder_layers": 8
+}

@@ -1,0 +1,5 @@
+{
+  "model_name": "facebook/wav2vec2-base",
+  "freeze_feature_extractor": true,
+  "freeze_encoder_layers": 6
+}

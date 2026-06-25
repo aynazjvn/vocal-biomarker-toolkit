@@ -1,0 +1,13 @@
+{
+  "loocv_transformer": {
+    "auroc": 0.963,
+    "cv_type": "loocv"
+  },
+  "n_samples": 831,
+  "n_positive": 437,
+  "n_negative": 394,
+  "n_subjects": 61,
+  "model_name": "facebook/wav2vec2-base",
+  "freeze_encoder_layers": 6,
+  "elapsed_s": 19940.4
+}
