@@ -21,10 +21,9 @@ For datasets with many subjects (e.g. Coswara, >100 subjects) use
 from __future__ import annotations
 
 import gc
-import json
 import logging
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Optional
 
@@ -48,7 +47,6 @@ except ImportError:
     _SKLEARN_OK = False
 
 from src.data.base_loader import AudioSample
-from src.evaluation.metrics import evaluate
 from src.models.wav2vec2_classifier import Wav2Vec2Classifier
 
 logger = logging.getLogger(__name__)
@@ -101,7 +99,6 @@ class AudioDataset(Dataset):
             logger.info("Waveform cache ready (%d samples)", len(self._cache))
 
     def _load_one(self, path) -> "torch.Tensor":
-        import torch
         waveform, _ = librosa.load(str(path), sr=self.sr, mono=True)
         if len(waveform) >= self.max_samples:
             waveform = waveform[: self.max_samples]

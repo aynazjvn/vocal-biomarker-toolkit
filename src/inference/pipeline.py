@@ -428,7 +428,6 @@ class VocalBiomarkerPipeline:
 def _load_transformer(directory: Path, device: str = "cpu"):
     """Load a Wav2Vec2Classifier from *directory*.  Returns None on failure."""
     try:
-        import torch
         from src.models.wav2vec2_classifier import Wav2Vec2Classifier
         model = Wav2Vec2Classifier.load(directory, map_location=device)
         model = model.to(device)
